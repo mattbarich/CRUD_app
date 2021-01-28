@@ -1,16 +1,23 @@
+import os
 from flask import Flask, request, render_template, redirect
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from random import *
+from werkzeug.utils import secure_filename
+
+UPLOAD_FILES = '~/static/uploadFiles'
+MAX_CONTENT_PATH = 1000000
 
 app = Flask(__name__, static_url_path="/")
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///database.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config['UPLOAD_FILES'] = UPLOAD_FILES
+app.config['MAX_CONTENT_PATH'] = MAX_CONTENT_PATH
+
 db = SQLAlchemy(app)
 
 
 def generate_SK():
-    random_string = ''
     import string
     characters = string.ascii_letters + string.punctuation + string.digits
     random_string = "".join(choice(characters) for x in range(256))
@@ -28,6 +35,14 @@ class Users(UserMixin, db.Model):
     username = db.Column(db.String(40), nullable=False, unique=True)
     password = db.Column(db.String(40), nullable=False)
     name = db.Column(db.String(40), nullable=False)
+
+
+class throwData(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    credits = db.Column(db.Integer)
+    gpa = db.Column(db.String(80))
+    major = db.Column(db.String(80))
+    graduation_year = db.Column(db.String(80))
 
 
 @login_manager.user_loader
@@ -74,6 +89,21 @@ def createAccount():
 def index():
     user = current_user.username
     return render_template('index.html', user=user)
+
+
+@app.route('/upload', methods=['GET', 'POST'])
+def upload():
+    from app import db
+    db.create_all()
+    if request.method == 'POST':
+        file = request.files['File']
+        fileName = secure_filename(file.filename)
+        pathS = "static\\uploadFiles"
+        fullPaths = os.path.join(pathS, fileName)
+        file.save(fullPaths)
+        print(fullPaths)
+        return redirect('/')
+    return render_template('upload.html')
 
 
 if __name__ == '__main__':
