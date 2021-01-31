@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+
+{% block title %} Profile-ProductionHub {% endblock %}
+
+{% block content %}
+
+<table id="table">
+    <th>Credits</th>
+    <th>GPA</th>
+    <th>Major</th>
+    <th>Graduation Year</th>
+    {% for file in throw_data %}
+        <tr>
+            <td>{{ file.credits }}</td>
+            <td>{{ file.gpa }}</td>
+            <td>{{ file.major }}</td>
+            <td>{{ file.graduation_year }}</td>
+        </tr>
+    {% endfor %}
+</table>
+
+
+{% endblock %}d

@@ -51,7 +51,12 @@ def load_user(uid):
     return user
 
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/')
+def home():
+    return render_template('Home.html')
+
+
+@app.route('/login', methods=['GET', 'POST'])
 def login():
     from app import db
     db.create_all()
@@ -81,6 +86,7 @@ def createAccount():
         else:
             db.session.add(Users(username=username, password=password, name=name))
             db.session.commit()
+        return redirect('/login')
     return render_template("createAccount.html")
 
 
@@ -92,8 +98,9 @@ def index():
 
 
 @app.route('/upload', methods=['GET', 'POST'])
+@login_required
 def upload():
-    from app import db
+    from app import db, throwData
     db.create_all()
     if request.method == 'POST':
         file = request.files['File']
@@ -102,8 +109,44 @@ def upload():
         fullPaths = os.path.join(pathS, fileName)
         file.save(fullPaths)
         print(fullPaths)
-        return redirect('/')
+        f = open(fullPaths, "r")
+        f.readline()
+        dataString = f.readlines()
+        for i in range(len(dataString)):
+            line = dataString[i].split(",")
+            hours = line[0]
+            gpa = line[1]
+            major = line[2]
+            year = line[3]
+            db.session.add(throwData(credits=hours, gpa=gpa, major=major, graduation_year=year))
+            db.session.commit()
+
+        return redirect('/database')
     return render_template('upload.html')
+
+
+@app.route('/database')
+@login_required
+def database():
+    throw_data = throwData.query.all()
+    return render_template('database.html', throw_data=throw_data)
+
+
+@app.errorhandler(404)
+def error(err):
+    return render_template('404.html', err=err)
+
+
+@app.errorhandler(401)
+def error(err):
+    return render_template('401.html', err=err)
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    login_user()
+    redirect('/')
 
 
 if __name__ == '__main__':
